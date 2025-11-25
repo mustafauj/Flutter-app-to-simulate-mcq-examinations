@@ -1,0 +1,97 @@
+@startuml Proctorly_User_Sequence_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #007BFF
+    LifeLineBackgroundColor #F8F9FA
+    LifeLineBorderColor #343A40
+    ParticipantFontSize 20
+    ActorFontSize 20
+    MessageFontSize 18
+    NoteFontSize 18
+    TitleFontSize 24
+    LifeLineBorderThickness 2
+    ArrowThickness 2
+}
+
+title Proctorly - User Management Flow
+
+participant "CollegeAdmin" as CA
+participant "UserScreen" as US
+participant "UserProvider" as UP
+participant "CredentialsManager" as CM
+participant "SupabaseService" as SS
+participant "Database" as DB
+
+== User Creation Flow ==
+
+CA -> US: Click "Create User"
+US -> CA: Show creation form
+CA -> US: Fill user details (name, email, role)
+CA -> US: Select department
+CA -> US: Click "Create User"
+US -> UP: createUser(user)
+UP -> CM: generateCredentials(role, collegeId)
+CM -> CM: Generate username/password
+CM -> SS: saveUserCredentials(credentials)
+SS -> DB: INSERT INTO users
+SS -> DB: INSERT INTO user_credentials
+DB -> SS: Return success
+SS -> CM: Return success
+CM -> UP: Return credentials
+UP -> UP: Add to users list
+UP -> US: Notify listeners
+US -> CA: Show credentials dialog
+
+note over CA, DB: College Admin creates users\nwith auto-generated credentials
+
+== User Management Operations ==
+
+CA -> US: View users list
+US -> UP: getUsers()
+UP -> SS: get('/users')
+SS -> DB: SELECT FROM users
+DB -> SS: Return users data
+SS -> UP: Return users list
+UP -> US: Display users
+US -> CA: Show users with actions
+
+alt Edit User
+    CA -> US: Click "Edit User"
+    US -> CA: Show edit form
+    CA -> US: Update user details
+    US -> UP: updateUser(userId, data)
+    UP -> SS: put('/users/{id}', data)
+    SS -> DB: UPDATE users SET...
+    DB -> SS: Return updated user
+    SS -> UP: Return success
+    UP -> US: Notify listeners
+    US -> CA: Show success message
+else Delete User
+    CA -> US: Click "Delete User"
+    US -> CA: Show confirmation dialog
+    CA -> US: Confirm deletion
+    US -> UP: deleteUser(userId)
+    UP -> SS: delete('/users/{id}')
+    SS -> DB: DELETE FROM users
+    SS -> DB: DELETE FROM user_credentials
+    DB -> SS: Return success
+    SS -> UP: Return success
+    UP -> US: Notify listeners
+    US -> CA: Show success message
+else Reset Password
+    CA -> US: Click "Reset Password"
+    US -> CM: resetUserPassword(userId)
+    CM -> CM: Generate new password
+    CM -> SS: updateUserCredentials(userId, newPassword)
+    SS -> DB: UPDATE user_credentials SET password
+    DB -> SS: Return success
+    SS -> CM: Return success
+    CM -> US: Return new credentials
+    US -> CA: Show new credentials dialog
+end
+
+note over CA, DB: College Admin manages users:\ncreate, edit, delete, reset passwords
+
+@enduml

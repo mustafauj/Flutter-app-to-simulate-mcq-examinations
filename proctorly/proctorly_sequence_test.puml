@@ -1,0 +1,70 @@
+@startuml Proctorly_Test_Sequence_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #007BFF
+    LifeLineBackgroundColor #F8F9FA
+    LifeLineBorderColor #343A40
+    ParticipantFontSize 20
+    ActorFontSize 20
+    MessageFontSize 18
+    NoteFontSize 18
+    TitleFontSize 24
+    LifeLineBorderThickness 2
+    ArrowThickness 2
+}
+
+title Proctorly - Test Management Flow
+
+== Test Creation Flow ==
+
+participant "Teacher" as T
+participant "TestScreen" as TS
+participant "TestProvider" as TP
+participant "SupabaseService" as SS
+participant "Database" as DB
+
+T -> TS: Click "Create Test"
+TS -> T: Show creation form
+T -> TS: Fill test details & questions
+T -> TS: Click "Save Test"
+TS -> TP: createTest(test)
+TP -> SS: post('/tests', testData)
+SS -> DB: INSERT INTO tests
+DB -> SS: Return created test
+SS -> TP: Return success
+TP -> TP: Add to tests list
+TP -> TS: Notify listeners
+TS -> T: Show success message
+
+note over T, DB: Teacher creates tests with\nquestions and settings
+
+== Test Taking Flow ==
+
+participant "Student" as S
+participant "TestScreen" as TS2
+participant "TestProvider" as TP2
+participant "SupabaseService" as SS2
+participant "Database" as DB2
+
+S -> TS2: Click "Take Test"
+TS2 -> TP2: getTests()
+TP2 -> SS2: get('/tests')
+SS2 -> DB2: SELECT FROM tests
+DB2 -> SS2: Return available tests
+SS2 -> TP2: Return tests list
+TP2 -> TS2: Display available tests
+S -> TS2: Select test to take
+TS2 -> S: Show test interface
+S -> TS2: Answer questions
+S -> TS2: Click "Submit Test"
+TS2 -> SS2: post('/test_results', resultData)
+SS2 -> DB2: INSERT INTO test_results
+DB2 -> SS2: Return success
+SS2 -> TS2: Return success
+TS2 -> S: Show results
+
+note over S, DB2: Student takes tests and\nsubmits answers for grading
+
+@enduml

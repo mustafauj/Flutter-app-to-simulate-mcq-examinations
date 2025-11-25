@@ -1,0 +1,51 @@
+@startuml Proctorly_Auth_Sequence_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #007BFF
+    LifeLineBackgroundColor #F8F9FA
+    LifeLineBorderColor #343A40
+    ParticipantFontSize 20
+    ActorFontSize 20
+    MessageFontSize 18
+    NoteFontSize 18
+    TitleFontSize 24
+    LifeLineBorderThickness 2
+    ArrowThickness 2
+}
+
+title Proctorly - User Authentication Flow
+
+participant "User" as U
+participant "LoginScreen" as LS
+participant "AuthProvider" as AP
+participant "CredentialsManager" as CM
+participant "SupabaseService" as SS
+participant "Database" as DB
+
+== User Login Flow ==
+
+U -> LS: Enter credentials
+LS -> CM: validateCredentials()
+alt SuperAdmin Login
+    CM -> LS: Return SuperAdmin user
+    LS -> AP: loginWithUser()
+    AP -> AP: Set auth state
+    AP -> LS: AuthResult.success
+    LS -> U: Navigate to SuperAdmin Dashboard
+else Regular User Login
+    CM -> SS: findUserCredentials()
+    SS -> DB: Query credentials table
+    DB -> SS: Return user data
+    SS -> CM: Return credentials
+    CM -> LS: Return user credentials
+    LS -> AP: loginWithUser()
+    AP -> AP: Set auth state
+    AP -> LS: AuthResult.success
+    LS -> U: Navigate to Role-based Dashboard
+end
+
+note over U, DB: Authentication flow handles both\nSuperAdmin and regular users\nwith different credential validation
+
+@enduml

@@ -1,0 +1,140 @@
+@startuml Proctorly_Sequence_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #007BFF
+    LifeLineBackgroundColor #F8F9FA
+    LifeLineBorderColor #343A40
+    ParticipantFontSize 18
+    ActorFontSize 18
+    MessageFontSize 16
+    NoteFontSize 16
+    TitleFontSize 20
+    LifeLineBorderThickness 2
+    ArrowThickness 2
+}
+
+title Proctorly Application Sequence Diagrams
+
+' User Login Sequence
+participant "User" as U
+participant "LoginScreen" as LS
+participant "AuthProvider" as AP
+participant "CredentialsManager" as CM
+participant "SupabaseService" as SS
+participant "Database" as DB
+
+== User Login Flow ==
+U -> LS: Enter credentials
+LS -> CM: validateCredentials()
+alt SuperAdmin
+    CM -> LS: Return SuperAdmin user
+    LS -> AP: loginWithUser()
+    AP -> AP: Set auth state
+    AP -> LS: AuthResult.success
+    LS -> U: Navigate to Dashboard
+else Regular User
+    CM -> SS: findUserCredentials()
+    SS -> DB: Query credentials
+    DB -> SS: Return user data
+    SS -> CM: Return credentials
+    CM -> LS: Return user credentials
+    LS -> AP: loginWithUser()
+    AP -> AP: Set auth state
+    AP -> LS: AuthResult.success
+    LS -> U: Navigate to Dashboard
+end
+
+' Test Creation Sequence
+participant "Teacher" as T
+participant "TestScreen" as TS
+participant "TestProvider" as TP
+participant "SupabaseService" as SS2
+participant "Database" as DB2
+
+== Test Creation Flow ==
+T -> TS: Click "Create Test"
+TS -> T: Show creation form
+T -> TS: Fill details & questions
+T -> TS: Click "Save Test"
+TS -> TP: createTest(test)
+TP -> SS2: post('/tests', testData)
+SS2 -> DB2: INSERT INTO tests
+DB2 -> SS2: Return created test
+SS2 -> TP: Return success
+TP -> TP: Add to tests list
+TP -> TS: Notify listeners
+TS -> T: Show success message
+
+' Test Taking Sequence
+participant "Student" as S
+participant "TestScreen" as TS2
+participant "TestProvider" as TP2
+participant "SupabaseService" as SS3
+participant "Database" as DB3
+
+== Test Taking Flow ==
+S -> TS2: Click "Take Test"
+TS2 -> TP2: getTests()
+TP2 -> SS3: get('/tests')
+SS3 -> DB3: SELECT FROM tests
+DB3 -> SS3: Return available tests
+SS3 -> TP2: Return tests list
+TP2 -> TS2: Display available tests
+S -> TS2: Select test to take
+TS2 -> S: Show test interface
+S -> TS2: Answer questions
+S -> TS2: Click "Submit Test"
+TS2 -> SS3: post('/test_results', resultData)
+SS3 -> DB3: INSERT INTO test_results
+DB3 -> SS3: Return success
+SS3 -> TS2: Return success
+TS2 -> S: Show results
+
+' College Management Sequence
+participant "SuperAdmin" as SA
+participant "CollegeScreen" as CS
+participant "CollegeProvider" as CP
+participant "SupabaseService" as SS4
+participant "Database" as DB4
+
+== College Creation Flow ==
+SA -> CS: Click "Create College"
+CS -> SA: Show creation form
+SA -> CS: Fill college details
+CS -> CP: createCollege(college)
+CP -> SS4: post('/colleges', collegeData)
+SS4 -> DB4: INSERT INTO colleges
+DB4 -> SS4: Return created college
+SS4 -> CP: Return success
+CP -> CP: Add to colleges list
+CP -> CS: Notify listeners
+CS -> SA: Show success message
+
+' User Management Sequence
+participant "CollegeAdmin" as CA
+participant "UserScreen" as US
+participant "UserProvider" as UP
+participant "CredentialsManager" as CM2
+participant "SupabaseService" as SS5
+participant "Database" as DB5
+
+== User Creation Flow ==
+CA -> US: Click "Create User"
+US -> CA: Show creation form
+CA -> US: Fill user details
+US -> UP: createUser(user)
+UP -> CM2: generateCredentials(role, collegeId)
+CM2 -> CM2: Generate username/password
+CM2 -> SS5: saveUserCredentials(credentials)
+SS5 -> DB5: INSERT INTO users
+SS5 -> DB5: INSERT INTO user_credentials
+DB5 -> SS5: Return success
+SS5 -> CM2: Return success
+CM2 -> UP: Return credentials
+UP -> UP: Add to users list
+UP -> US: Notify listeners
+US -> CA: Show credentials dialog
+
+@enduml

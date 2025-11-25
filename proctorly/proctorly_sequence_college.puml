@@ -1,0 +1,80 @@
+@startuml Proctorly_College_Sequence_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #007BFF
+    LifeLineBackgroundColor #F8F9FA
+    LifeLineBorderColor #343A40
+    ParticipantFontSize 20
+    ActorFontSize 20
+    MessageFontSize 18
+    NoteFontSize 18
+    TitleFontSize 24
+    LifeLineBorderThickness 2
+    ArrowThickness 2
+}
+
+title Proctorly - College Management Flow
+
+participant "SuperAdmin" as SA
+participant "CollegeScreen" as CS
+participant "CollegeProvider" as CP
+participant "SupabaseService" as SS
+participant "Database" as DB
+
+== College Creation Flow ==
+
+SA -> CS: Click "Create College"
+CS -> SA: Show creation form
+SA -> CS: Fill college details
+SA -> CS: Click "Save College"
+CS -> CP: createCollege(college)
+CP -> SS: post('/colleges', collegeData)
+SS -> DB: INSERT INTO colleges
+DB -> SS: Return created college
+SS -> CP: Return success
+CP -> CP: Add to colleges list
+CP -> CS: Notify listeners
+CS -> SA: Show success message
+
+note over SA, DB: SuperAdmin creates new colleges\nwith complete details
+
+== College Management Operations ==
+
+SA -> CS: View colleges list
+CS -> CP: getColleges()
+CP -> SS: get('/colleges')
+SS -> DB: SELECT FROM colleges
+DB -> SS: Return colleges data
+SS -> CP: Return colleges list
+CP -> CS: Display colleges
+CS -> SA: Show colleges with actions
+
+alt Edit College
+    SA -> CS: Click "Edit College"
+    CS -> SA: Show edit form
+    SA -> CS: Update college details
+    CS -> CP: updateCollege(collegeId, data)
+    CP -> SS: put('/colleges/{id}', data)
+    SS -> DB: UPDATE colleges SET...
+    DB -> SS: Return updated college
+    SS -> CP: Return success
+    CP -> CS: Notify listeners
+    CS -> SA: Show success message
+else Delete College
+    SA -> CS: Click "Delete College"
+    CS -> SA: Show confirmation dialog
+    SA -> CS: Confirm deletion
+    CS -> CP: deleteCollege(collegeId)
+    CP -> SS: delete('/colleges/{id}')
+    SS -> DB: DELETE FROM colleges
+    DB -> SS: Return success
+    SS -> CP: Return success
+    CP -> CS: Notify listeners
+    CS -> SA: Show success message
+end
+
+note over SA, DB: SuperAdmin can create, edit,\nand delete colleges
+
+@enduml

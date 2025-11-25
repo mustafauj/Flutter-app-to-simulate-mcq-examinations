@@ -1,0 +1,443 @@
+@startuml Proctorly_Design_Class_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    ArrowColor #007BFF
+}
+
+title Proctorly Design Class Diagram (No Connections)
+
+' Enums
+enum UserRole {
+  student, teacher, admin, superAdmin
+}
+
+enum QuestionType {
+  mcq, shortAnswer, fillInBlanks
+}
+
+enum TestStatus {
+  draft, published, completed, archived
+}
+
+enum NotificationType {
+  test, result, reminder, announcement
+}
+
+enum ScreenType {
+  mobile, tablet, desktop, largeDesktop
+}
+
+' Core Domain Models
+class User {
+  - String id, name, email
+  - UserRole role
+  - String? phone, profilePicture
+  - String collegeId, departmentId
+  - int? year
+  - String? studentId, employeeId
+  - bool canChangePassword
+  - DateTime createdAt, lastLogin
+  --
+  + fromJson(), toJson(), copyWith()
+  + bool get isStudent, isTeacher, isAdmin, isSuperAdmin
+}
+
+class College {
+  - String id, name, code, description
+  - String? logo
+  - String primaryColor, secondaryColor
+  - DateTime createdAt
+  - bool isActive
+  --
+  + fromJson(), toJson(), copyWith()
+  + Color get primaryColorObj, secondaryColorObj
+  + bool get hasLogo
+}
+
+class Department {
+  - String id, name, code, description
+  - String collegeId
+  - DateTime createdAt
+  - bool isActive
+  --
+  + fromJson(), toJson(), copyWith()
+  + String get displayName
+}
+
+class Test {
+  - String id, title, description, createdBy
+  - String collegeId, departmentId
+  - List<int>? targetYears
+  - DateTime startTime, endTime
+  - int durationMinutes
+  - TestStatus status
+  - List<Question> questions
+  - DateTime createdAt, publishedAt
+  - bool isActive
+  --
+  + fromJson(), toJson(), copyWith()
+  + bool get isDraft, isPublished, isCompleted
+  + Duration get duration
+  + int get totalPoints
+}
+
+class Question {
+  - String id, testId, text
+  - QuestionType type
+  - List<Answer> options
+  - int correctAnswerIndex, points, order
+  --
+  + fromJson(), toJson(), copyWith()
+  + bool get isMultipleChoice, isShortAnswer
+  + Answer? get correctAnswer
+}
+
+class Answer {
+  - String id, questionId, studentId, text
+  - bool isCorrect
+  - DateTime submittedAt
+  --
+  + fromJson(), toJson(), copyWith()
+  + bool get isCorrectAnswer
+}
+
+class TestResult {
+  - String id, testId, studentId, testTitle
+  - List<Answer> answers
+  - int score, totalQuestions, correctAnswers
+  - int timeSpent
+  - DateTime submittedAt, completedAt
+  - bool isSynced
+  --
+  + fromJson(), toJson()
+  + double get percentage
+  + bool get isPassed
+  + Duration get timeSpentDuration
+}
+
+class AppNotification {
+  - String id, title, message
+  - NotificationType type
+  - DateTime createdAt
+  - bool isRead
+  - String? relatedId
+  --
+  + fromJson(), toJson(), copyWith()
+  + bool get isUnread
+  + String get timeAgo
+}
+
+class AuthResult {
+  - bool success
+  - String? error
+  - User? user
+  --
+  + AuthResult.success(User)
+  + AuthResult.failure(String)
+  + bool get isSuccess, isFailure
+}
+
+' Network Layer
+interface NetworkService {
+  + Future<ApiResponse<T>> get<T>(String, {Map<String, String>?})
+  + Future<ApiResponse<T>> post<T>(String, {Map<String, dynamic>?, Map<String, String>?})
+  + Future<ApiResponse<T>> put<T>(String, {Map<String, dynamic>?, Map<String, String>?})
+  + Future<ApiResponse<T>> delete<T>(String, {Map<String, String>?})
+  + Future<void> logout()
+  + bool get isAuthenticated
+}
+
+class ApiResponse<T> {
+  - bool success
+  - T? data
+  - String? error
+  - int? statusCode
+  --
+  + ApiResponse.success(T, [int?])
+  + ApiResponse.failure(String, [int?])
+  + bool get isSuccess, isFailure
+}
+
+class SupabaseService {
+  - SupabaseClient _client
+  --
+  + Future<ApiResponse<T>> get<T>(String, {Map<String, String>?})
+  + Future<ApiResponse<T>> post<T>(String, {Map<String, dynamic>?, Map<String, String>?})
+  + Future<ApiResponse<T>> put<T>(String, {Map<String, dynamic>?, Map<String, String>?})
+  + Future<ApiResponse<T>> delete<T>(String, {Map<String, String>?})
+  + Future<ApiResponse<Map<String, dynamic>>> signInWithEmail(String, String)
+  + Future<ApiResponse<Map<String, dynamic>>> signUpWithEmail(String, String, Map<String, dynamic>)
+  + Future<ApiResponse<void>> signOut()
+  + Future<ApiResponse<void>> changePassword(String)
+  + User? get currentUser
+  + Session? get currentSession
+  + bool get isAuthenticated
+  + Future<void> logout()
+}
+
+class MockNetworkService {
+  --
+  + Future<ApiResponse<T>> get<T>(String, {Map<String, String>?})
+  + Future<ApiResponse<T>> post<T>(String, {Map<String, dynamic>?, Map<String, String>?})
+  + Future<ApiResponse<T>> put<T>(String, {Map<String, dynamic>?, Map<String, String>?})
+  + Future<ApiResponse<T>> delete<T>(String, {Map<String, String>?})
+  + Future<void> logout()
+  + bool get isAuthenticated
+}
+
+' Repository Layer
+class AuthRepository {
+  - NetworkService _networkService
+  --
+  + Future<User?> login(String, String)
+  + Future<void> logout()
+  + Future<User?> getCurrentUser()
+  + Future<bool> isAuthenticated()
+  + Future<void> refreshToken()
+}
+
+class CollegeRepository {
+  - NetworkService _networkService
+  --
+  + Future<List<College>> getColleges()
+  + Future<College> createCollege(College)
+  + Future<College> updateCollege(College)
+  + Future<void> deleteCollege(String)
+  + Future<College?> getCollegeById(String)
+  + Future<List<College>> searchColleges(String)
+}
+
+class DepartmentRepository {
+  - NetworkService _networkService
+  --
+  + Future<List<Department>> getDepartments()
+  + Future<Department> createDepartment(Department)
+  + Future<Department> updateDepartment(Department)
+  + Future<void> deleteDepartment(String)
+  + Future<List<Department>> getDepartmentsByCollege(String)
+  + Future<Department?> getDepartmentById(String)
+}
+
+class TestRepository {
+  - NetworkService _networkService
+  --
+  + Future<List<Test>> getTests()
+  + Future<Test> createTest(Test)
+  + Future<Test> updateTest(Test)
+  + Future<void> deleteTest(String)
+  + Future<List<Test>> getTestsByCollege(String)
+  + Future<List<Test>> getTestsByDepartment(String)
+  + Future<List<Test>> getTestsByCreator(String)
+  + Future<Test?> getTestById(String)
+}
+
+class UserRepository {
+  - NetworkService _networkService
+  --
+  + Future<List<User>> getUsers()
+  + Future<User> createUser(User)
+  + Future<User> updateUser(User)
+  + Future<void> deleteUser(String)
+  + Future<List<User>> getUsersByCollege(String)
+  + Future<List<User>> getUsersByDepartment(String)
+  + Future<List<User>> getUsersByRole(UserRole)
+  + Future<User?> getUserById(String)
+}
+
+' Provider Layer (State Management)
+class AuthProvider {
+  - User? _currentUser
+  - bool _isLoading, _isAuthenticated
+  - String? _error
+  - AuthRepository _authRepository
+  - SharedPreferences _prefs
+  --
+  + User? get currentUser
+  + bool get isLoading, isAuthenticated
+  + String? get error
+  + Future<AuthResult> login(String, String)
+  + Future<AuthResult> loginWithUser(String, String, User)
+  + Future<void> logout()
+  + Future<void> refreshUser()
+}
+
+class ThemeProvider {
+  - bool _isDarkMode
+  - College? _currentCollege
+  - Color? _customPrimaryColor, _customSecondaryColor
+  --
+  + bool get isDarkMode
+  + College? get currentCollege
+  + Color? get customPrimaryColor, customSecondaryColor
+  + Future<void> toggleTheme()
+  + Future<void> setCollege(College)
+  + ThemeData get currentTheme
+}
+
+class CollegeProvider {
+  - List<College> _colleges
+  - College? _currentCollege
+  - bool _isLoading
+  - String? _error
+  - CollegeRepository _collegeRepository
+  --
+  + List<College> get colleges
+  + College? get currentCollege
+  + bool get isLoading
+  + String? get error
+  + Future<void> setCurrentCollege(College)
+  + Future<void> loadColleges()
+  + Future<College> createCollege(College)
+  + Future<void> updateCollege(College)
+  + Future<void> deleteCollege(String)
+}
+
+class TestProvider {
+  - List<Test> _tests, _draftTests
+  - bool _isLoading
+  - String? _error
+  - TestRepository _testRepository
+  --
+  + List<Test> get tests, draftTests
+  + bool get isLoading
+  + String? get error
+  + TestRepository get testRepository
+  + Future<void> loadTests()
+  + Future<void> createTest(Test)
+  + Future<void> updateTest(Test)
+  + Future<void> deleteTest(String)
+  + Future<void> publishTest(String)
+  + Future<void> unpublishTest(String)
+  + List<Test> searchTests(String)
+  + Future<void> submitTestResult(TestResult)
+}
+
+class NotificationProvider {
+  - List<AppNotification> _notifications
+  - int _unreadCount
+  --
+  + List<AppNotification> get notifications
+  + int get unreadCount
+  + bool get isLoading
+  + void markAsRead(String)
+  + void addNotification(AppNotification)
+  + void markAllAsRead()
+  + void deleteNotification(String)
+  + Future<void> loadNotifications()
+  + Future<void> sendNotification(AppNotification)
+}
+
+class TestResultProvider {
+  - List<TestResult> _results
+  - bool _isLoading
+  --
+  + List<TestResult> get results
+  + bool get isLoading
+  + Future<void> loadTestResults()
+  + List<TestResult> getResultsForStudent(String)
+  + TestResult? getResultForTest(String, String)
+  + double getAverageScore(String)
+  + Map<String, dynamic> getStudentStats(String)
+  + Future<void> submitTestResult(TestResult)
+}
+
+class LanguageProvider {
+  - Locale _currentLocale
+  --
+  + Locale get currentLocale
+  + Future<void> changeLanguage(String)
+}
+
+' Utility Classes
+class CredentialsManager {
+  --
+  + static Map<String, String> getSuperAdminCredentials()
+  + static bool isSuperAdmin(String, String)
+  + static Map<String, String> generateCredentials(String, String, {String?, String?, String?})
+  + static Future<void> saveUserCredentials(Map<String, String>, {String?, String?})
+  + static Future<List<Map<String, String>>> loadUserCredentials()
+  + static Future<Map<String, String>?> findUserCredentials(String, String)
+  + static Future<List<Map<String, String>>> getCollegeCredentials(String)
+  + static Future<void> deleteUserCredentials(String)
+  + static String generateRandomPassword({int})
+  + static String formatCredentialsForDisplay(Map<String, String>)
+  + static Future<String> getAllCredentialsDisplay()
+}
+
+class AppConstants {
+  + static const Color primaryColor, secondaryColor
+  + static const Color successColor, errorColor, warningColor, infoColor
+  + static const TextStyle headingStyle, subheadingStyle, bodyStyle
+  + static const TextStyle captionStyle, smallStyle
+  + static const double paddingXSmall, paddingSmall, paddingMedium
+  + static const double paddingLarge, paddingXLarge
+  + static const double radiusSmall, radiusMedium, radiusLarge
+  + static const Duration animationFast, animationNormal, animationSlow
+  + static const List<Locale> supportedLocales
+  + static const List<LocalizationsDelegate<dynamic>> localizationsDelegates
+}
+
+class Responsive {
+  + static const double mobileBreakpoint, tabletBreakpoint
+  + static const double desktopBreakpoint, largeDesktopBreakpoint
+  + static ScreenType getScreenType(double)
+  + static bool isMobile(BuildContext), isTablet(BuildContext)
+  + static bool isDesktop(BuildContext), isLargeDesktop(BuildContext)
+  + static EdgeInsets getResponsivePadding(BuildContext), getResponsiveMargin(BuildContext)
+  + static double getResponsiveFontSize(BuildContext, double)
+  + static double getResponsiveIconSize(BuildContext, double)
+  + static int getResponsiveGridColumns(BuildContext)
+  + static double getResponsiveCardWidth(BuildContext), getResponsiveSidebarWidth(BuildContext)
+  + static double getResponsiveMaxContentWidth(BuildContext)
+  + static double getResponsiveSpacing(BuildContext, double)
+  + static double getResponsiveButtonHeight(BuildContext), getResponsiveAppBarHeight(BuildContext)
+}
+
+class ResponsiveWidget {
+  - Widget mobile
+  - Widget? tablet, desktop, largeDesktop
+  --
+  + ResponsiveWidget({...})
+  + Widget build(BuildContext)
+}
+
+class ResponsiveLayoutBuilder {
+  - Widget Function(BuildContext, ScreenType) builder
+  --
+  + ResponsiveLayoutBuilder({...})
+  + Widget build(BuildContext)
+}
+
+class ResponsiveContainer {
+  - Widget child
+  - double? maxWidth
+  - EdgeInsets? padding, margin
+  --
+  + ResponsiveContainer({...})
+  + Widget build(BuildContext)
+}
+
+class ResponsiveGridView {
+  - List<Widget> children
+  - double? childAspectRatio, crossAxisSpacing, mainAxisSpacing
+  --
+  + ResponsiveGridView({...})
+  + Widget build(BuildContext)
+}
+
+class ResponsiveText {
+  - String text
+  - TextStyle? style
+  - TextAlign? textAlign
+  - int? maxLines
+  - TextOverflow? overflow
+  --
+  + ResponsiveText(String, {...})
+  + Widget build(BuildContext)
+}
+
+@enduml

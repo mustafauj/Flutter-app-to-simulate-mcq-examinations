@@ -1,0 +1,183 @@
+@startuml Proctorly_Class_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    ArrowColor #007BFF
+}
+
+title Proctorly Application Class Diagram
+
+' Enums
+enum UserRole {
+  student
+  teacher
+  admin
+  superAdmin
+}
+
+enum TestStatus {
+  draft
+  published
+  completed
+  archived
+}
+
+' Core Models
+class User {
+  - String id, name, email
+  - UserRole role
+  - String collegeId, departmentId
+  - DateTime createdAt, lastLogin
+  --
+  + fromJson(), toJson(), copyWith()
+}
+
+class College {
+  - String id, name, code
+  - String primaryColor, secondaryColor
+  - DateTime createdAt
+  --
+  + fromJson(), toJson(), copyWith()
+}
+
+class Department {
+  - String id, name, code
+  - String collegeId
+  - DateTime createdAt
+  --
+  + fromJson(), toJson(), copyWith()
+}
+
+class Test {
+  - String id, title, createdBy
+  - String collegeId, departmentId
+  - TestStatus status
+  - List<Question> questions
+  --
+  + fromJson(), toJson(), copyWith()
+}
+
+class Question {
+  - String id, testId, text
+  - QuestionType type
+  - List<Answer> options
+  --
+  + fromJson(), toJson(), copyWith()
+}
+
+class TestResult {
+  - String id, testId, studentId
+  - int score, totalQuestions
+  - DateTime submittedAt
+  --
+  + fromJson(), toJson()
+}
+
+' Network Layer
+interface NetworkService {
+  + get<T>(), post<T>(), put<T>(), delete<T>()
+  + logout(), isAuthenticated
+}
+
+class SupabaseService {
+  - SupabaseClient _client
+  --
+  + get<T>(), post<T>(), put<T>(), delete<T>()
+  + signInWithEmail(), signOut()
+  + currentUser, isAuthenticated
+}
+
+class MockNetworkService {
+  --
+  + get<T>(), post<T>(), put<T>(), delete<T>()
+  + logout(), isAuthenticated
+}
+
+' Repository Layer
+class AuthRepository {
+  - NetworkService _networkService
+  --
+  + login(), logout(), getCurrentUser()
+}
+
+class CollegeRepository {
+  - NetworkService _networkService
+  --
+  + getColleges(), createCollege(), updateCollege()
+}
+
+class TestRepository {
+  - NetworkService _networkService
+  --
+  + getTests(), createTest(), updateTest()
+}
+
+' Provider Layer (State Management)
+class AuthProvider {
+  - User? _currentUser
+  - AuthRepository _authRepository
+  --
+  + currentUser, isLoading, isAuthenticated
+  + login(), logout()
+}
+
+class CollegeProvider {
+  - List<College> _colleges
+  - CollegeRepository _collegeRepository
+  --
+  + colleges, isLoading
+  + loadColleges(), createCollege()
+}
+
+class TestProvider {
+  - List<Test> _tests
+  - TestRepository _testRepository
+  --
+  + tests, isLoading
+  + loadTests(), createTest(), publishTest()
+}
+
+class ThemeProvider {
+  - bool _isDarkMode
+  - College? _currentCollege
+  --
+  + isDarkMode, currentTheme
+  + toggleTheme(), setCollege()
+}
+
+' Utility Classes
+class CredentialsManager {
+  --
+  + generateCredentials()
+  + saveUserCredentials()
+  + findUserCredentials()
+}
+
+class AppConstants {
+  + primaryColor, secondaryColor
+  + headingStyle, bodyStyle
+  + paddingMedium, radiusMedium
+}
+
+' Relationships
+NetworkService <|.. SupabaseService
+NetworkService <|.. MockNetworkService
+
+AuthRepository --> NetworkService
+CollegeRepository --> NetworkService
+TestRepository --> NetworkService
+
+AuthProvider --> AuthRepository
+CollegeProvider --> CollegeRepository
+TestProvider --> TestRepository
+
+User --> UserRole
+College --> Department : contains
+Test --> Question : contains
+Test --> TestResult : generates
+User --> TestResult : submits
+
+@enduml

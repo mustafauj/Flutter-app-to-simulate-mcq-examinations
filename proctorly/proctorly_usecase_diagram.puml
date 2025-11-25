@@ -1,0 +1,122 @@
+@startuml Proctorly_UseCase_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam usecase {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    ArrowColor #007BFF
+    FontSize 10
+}
+skinparam actor {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontSize 12
+}
+skinparam rectangle {
+    BackgroundColor #F5F5F5
+    BorderColor #666666
+}
+
+title Proctorly Application Use Case Diagram
+
+' Actors
+actor "SuperAdmin" as SA
+actor "College Admin" as CA
+actor "Teacher" as T
+actor "Student" as S
+
+' Main system boundary
+rectangle "Proctorly System" {
+    
+    ' SuperAdmin Use Cases (grouped)
+    rectangle "SuperAdmin Functions" #lightblue {
+        usecase "Manage Colleges\n(Create, Edit, Delete, View)" as UC1
+        usecase "Manage Global Users" as UC2
+        usecase "System Analytics\n& Monitoring" as UC3
+        usecase "System Configuration" as UC4
+    }
+    
+    ' College Admin Use Cases (grouped)
+    rectangle "College Management" #lightgreen {
+        usecase "Manage Departments\n(Create, Edit, Delete)" as UC5
+        usecase "Manage College Users\n(Create Teachers/Students)" as UC6
+        usecase "College Analytics\n& Settings" as UC7
+        usecase "Oversee College Tests" as UC8
+    }
+    
+    ' Teacher Use Cases (grouped)
+    rectangle "Teaching Functions" #yellow {
+        usecase "Test Management\n(Create, Edit, Delete)" as UC9
+        usecase "Test Publishing\n& Scheduling" as UC10
+        usecase "Monitor Tests\n& Grade Submissions" as UC11
+        usecase "View Student\nPerformance" as UC12
+    }
+    
+    ' Student Use Cases (grouped)
+    rectangle "Learning Functions" #orange {
+        usecase "Take Tests\n& Submit Answers" as UC13
+        usecase "View Results\n& Track Progress" as UC14
+        usecase "Access Department\nContent" as UC15
+    }
+    
+    ' Common Use Cases (simplified)
+    rectangle "Common Functions" #gray {
+        usecase "Authentication\n(Login/Logout)" as UC16
+        usecase "Profile Management\n(View/Update/Password)" as UC17
+        usecase "Notifications\n& Preferences" as UC18
+    }
+}
+
+' SuperAdmin Relationships
+SA --> UC1
+SA --> UC2
+SA --> UC3
+SA --> UC4
+
+' College Admin Relationships
+CA --> UC5
+CA --> UC6
+CA --> UC7
+CA --> UC8
+
+' Teacher Relationships
+T --> UC9
+T --> UC10
+T --> UC11
+T --> UC12
+
+' Student Relationships
+S --> UC13
+S --> UC14
+S --> UC15
+
+' Common Relationships (All Users)
+SA --> UC16
+SA --> UC17
+SA --> UC18
+
+CA --> UC16
+CA --> UC17
+CA --> UC18
+
+T --> UC16
+T --> UC17
+T --> UC18
+
+S --> UC16
+S --> UC17
+S --> UC18
+
+' Include Relationships (simplified)
+UC1 ..> UC16 : <<include>>
+UC5 ..> UC16 : <<include>>
+UC9 ..> UC16 : <<include>>
+UC13 ..> UC16 : <<include>>
+
+' Extend Relationships (simplified)
+UC10 ..> UC9 : <<extend>>
+UC11 ..> UC10 : <<extend>>
+UC14 ..> UC13 : <<extend>>
+
+@enduml

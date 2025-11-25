@@ -1,0 +1,200 @@
+@startuml Proctorly_ER_Diagram
+
+!theme plain
+skinparam linetype ortho
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    ArrowColor #007BFF
+}
+
+title Proctorly Database Entity Relationship Diagram
+
+' Entities
+entity "colleges" {
+  * id : UUID <<PK>>
+  --
+  * name : VARCHAR(255)
+  * code : VARCHAR(50) <<UK>>
+  description : TEXT
+  logo_url : TEXT
+  primary_color : VARCHAR(7)
+  secondary_color : VARCHAR(7)
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  is_active : BOOLEAN
+}
+
+entity "departments" {
+  * id : UUID <<PK>>
+  --
+  * name : VARCHAR(255)
+  description : TEXT
+  * college_id : UUID <<FK>>
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  is_active : BOOLEAN
+}
+
+entity "users" {
+  * id : UUID <<PK>>
+  --
+  * name : VARCHAR(255)
+  * email : VARCHAR(255) <<UK>>
+  phone : VARCHAR(20)
+  * role : user_role
+  college_id : UUID <<FK>>
+  department_id : UUID <<FK>>
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  is_active : BOOLEAN
+  last_login : TIMESTAMP
+}
+
+entity "user_credentials" {
+  * id : UUID <<PK>>
+  --
+  * user_id : UUID <<FK>>
+  * username : VARCHAR(100) <<UK>>
+  * password_hash : VARCHAR(255)
+  * role : user_role
+  college_id : UUID <<FK>>
+  department_id : UUID <<FK>>
+  generated_at : TIMESTAMP
+  is_active : BOOLEAN
+}
+
+entity "tests" {
+  * id : UUID <<PK>>
+  --
+  * title : VARCHAR(255)
+  description : TEXT
+  * duration_minutes : INTEGER
+  * college_id : UUID <<FK>>
+  department_id : UUID <<FK>>
+  * created_by : UUID <<FK>>
+  status : test_status
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  is_active : BOOLEAN
+  start_time : TIMESTAMP
+  end_time : TIMESTAMP
+}
+
+entity "questions" {
+  * id : UUID <<PK>>
+  --
+  * test_id : UUID <<FK>>
+  * text : TEXT
+  question_type : VARCHAR(50)
+  points : INTEGER
+  * order_index : INTEGER
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "answers" {
+  * id : UUID <<PK>>
+  --
+  * question_id : UUID <<FK>>
+  * text : TEXT
+  is_correct : BOOLEAN
+  * order_index : INTEGER
+  created_at : TIMESTAMP
+}
+
+entity "test_results" {
+  * id : UUID <<PK>>
+  --
+  * test_id : UUID <<FK>>
+  * student_id : UUID <<FK>>
+  * score : INTEGER
+  * total_questions : INTEGER
+  correct_answers : INTEGER
+  time_spent_minutes : INTEGER
+  answers : JSONB
+  started_at : TIMESTAMP
+  * submitted_at : TIMESTAMP
+  is_completed : BOOLEAN
+}
+
+entity "notifications" {
+  * id : UUID <<PK>>
+  --
+  * user_id : UUID <<FK>>
+  * title : VARCHAR(255)
+  * message : TEXT
+  * type : notification_type
+  data : JSONB
+  is_read : BOOLEAN
+  created_at : TIMESTAMP
+  read_at : TIMESTAMP
+}
+
+entity "test_sessions" {
+  * id : UUID <<PK>>
+  --
+  * test_id : UUID <<FK>>
+  * student_id : UUID <<FK>>
+  * session_token : VARCHAR(255) <<UK>>
+  started_at : TIMESTAMP
+  last_activity : TIMESTAMP
+  is_active : BOOLEAN
+  ip_address : INET
+  user_agent : TEXT
+}
+
+' Relationships
+colleges ||--o{ departments : "has"
+colleges ||--o{ users : "employs"
+colleges ||--o{ user_credentials : "generates"
+colleges ||--o{ tests : "conducts"
+
+departments ||--o{ users : "belongs_to"
+departments ||--o{ user_credentials : "assigns_to"
+departments ||--o{ tests : "targets"
+
+users ||--o{ user_credentials : "has"
+users ||--o{ tests : "creates"
+users ||--o{ test_results : "submits"
+users ||--o{ notifications : "receives"
+users ||--o{ test_sessions : "participates_in"
+
+tests ||--o{ questions : "contains"
+tests ||--o{ test_results : "generates"
+tests ||--o{ test_sessions : "tracks"
+
+questions ||--o{ answers : "has_options"
+
+test_results }o--|| tests : "belongs_to"
+test_results }o--|| users : "submitted_by"
+
+test_sessions }o--|| tests : "monitors"
+test_sessions }o--|| users : "belongs_to"
+
+notifications }o--|| users : "sent_to"
+
+' Enums
+enum "user_role" {
+  superAdmin
+  admin
+  teacher
+  student
+}
+
+enum "test_status" {
+  draft
+  active
+  inactive
+  completed
+}
+
+enum "notification_type" {
+  test_assigned
+  test_completed
+  result_available
+  system_announcement
+}
+
+@enduml

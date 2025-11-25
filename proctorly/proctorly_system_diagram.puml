@@ -1,0 +1,145 @@
+@startuml Proctorly_System_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    FontSize 12
+}
+skinparam package {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontSize 14
+}
+
+title Proctorly System Components Diagram
+
+package "Client Layer" #lightblue {
+    class "Flutter Mobile App" {
+        + Responsive UI
+        + Offline Support
+        + Push Notifications
+        + State Management
+    }
+    
+    class "Flutter Web App" {
+        + Responsive Design
+        + Real-time Updates
+        + Progressive Web App
+        + Cross-browser Support
+    }
+}
+
+package "Presentation Layer" #lightgreen {
+    class "Authentication Screens" {
+        + Login Screen
+        + Signup Screen
+        + Password Reset
+        + Profile Management
+    }
+    
+    class "Role-Based Screens" {
+        + SuperAdmin Dashboard
+        + College Admin Dashboard
+        + Teacher Dashboard
+        + Student Dashboard
+    }
+    
+    class "Shared Screens" {
+        + Test Creation Screen
+        + Test Taking Screen
+        + Notifications Screen
+        + Settings Screen
+    }
+}
+
+package "Business Logic Layer" #yellow {
+    class "User Management" {
+        + User Registration
+        + User Authentication
+        + Role Management
+        + Profile Management
+    }
+    
+    class "College Management" {
+        + College Creation
+        + Department Management
+        + User Assignment
+        + College Settings
+    }
+    
+    class "Test Management" {
+        + Test Creation
+        + Question Management
+        + Test Scheduling
+        + Result Processing
+    }
+    
+    class "Notification System" {
+        + Email Notifications
+        + Push Notifications
+        + In-app Notifications
+        + Notification Preferences
+    }
+}
+
+package "Data Access Layer" #orange {
+    class "Supabase Service" {
+        + Database Operations
+        + Real-time Subscriptions
+        + File Storage
+        + Authentication
+    }
+    
+    class "Repository Pattern" {
+        + User Repository
+        + College Repository
+        + Test Repository
+        + Notification Repository
+    }
+    
+    class "Data Models" {
+        + User Model
+        + College Model
+        + Test Model
+        + Question Model
+        + Result Model
+    }
+}
+
+package "Infrastructure Layer" #gray {
+    class "Network Service" {
+        + HTTP Client
+        + API Communication
+        + Error Handling
+        + Request Interceptors
+    }
+    
+    class "Local Storage" {
+        + Shared Preferences
+        + SQLite Database
+        + File System
+        + Cache Management
+    }
+    
+    class "External Services" {
+        + Email Service
+        + Analytics Service
+        + Push Service
+        + File Upload Service
+    }
+}
+
+' Layer Descriptions
+note top of "Client Layer" : **Client Applications**\nMulti-platform Flutter apps\nwith responsive design
+
+note top of "Presentation Layer" : **User Interface**\nRole-based screens and\nshared components
+
+note top of "Business Logic Layer" : **Core Functionality**\nBusiness rules and\napplication logic
+
+note top of "Data Access Layer" : **Data Management**\nDatabase operations and\nmodel definitions
+
+note top of "Infrastructure Layer" : **System Services**\nNetwork, storage, and\nexternal integrations
+
+@enduml
